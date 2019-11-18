@@ -1,5 +1,6 @@
 export function generateData() {
   const items = [];
+  const now = Date.now();
 
   for (let i = 0; i < 10; i++) {
     if (Math.random() > 0.7)
@@ -7,7 +8,8 @@ export function generateData() {
 
     items.push({
       name: String.fromCharCode(65 + i),
-      value: Math.random() * 100
+      value: Math.random() * 100,
+      timestamp: now
     });
   };
 

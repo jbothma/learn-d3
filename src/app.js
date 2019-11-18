@@ -1,4 +1,9 @@
-import * as d3 from 'd3';
+import { select, selectall } from 'd3-selection';
+import { transition } from 'd3-transition';
+import { scaleLinear, scaleBand } from 'd3-scale';
+import { axisBottom, axisLeft } from 'd3-axis';
+import { max } from 'd3-array';
+
 import { generateData } from './data';
 
 
@@ -9,60 +14,85 @@ function drawChart() {
       height = 500 - margin.top - margin.bottom;
 
   // set the ranges
-  var x = d3.scaleBand()
+  var x = scaleBand()
       .range([0, width])
       .padding(0.1);
-  var y = d3.scaleLinear()
+  var y = scaleLinear()
       .range([height, 0]);
 
-  // append the svg object to the body of the page
-  // append a 'group' element to 'svg'
-  // moves the 'group' element to the top left margin
-  var svg = d3.select("#root").append("svg")
+  var svg = select("#root").append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform",
             "translate(" + margin.left + "," + margin.top + ")");
 
+  const t = transition()
+        .duration(750);
 
+  // add the x Axis
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .attr("class", "x axis");
+
+  // add the y Axis
+  svg.append("g")
+    .attr("class", "y axis");
+
+  // Define the div for the tooltip
+  var div = select("#root").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
 
   function showData(data) {
     const nodes = svg.selectAll(".bar");
 
     // Scale the range of the data in the domains
     x.domain(data.map(function(d) { return d.name; }));
-    y.domain([0, d3.max(data, function(d) { return d.value; })]);
+    y.domain([0, max(data, function(d) { return d.value; })]);
 
     // append the rectangles for the bar chart
 
-    nodes.data(data)
+    nodes.data(data, d => d.name)
       .enter().append("rect")
-      .attr("class", "bar");
+      .attr("class", "bar")
+      .on("mouseover", function(d) {
+          div.style("opacity", .9);
+        div.html(d.name + " " + d.timestamp)
+          .style("left", (x(d.name)) + "px")
+          .style("bottom", (y(d.value)) + "px");
+      })
+      .on("mouseout", function(d) {
+          div.style("opacity", 0);
+      });
+
+    svg.select(".x.axis")
+      .transition(t)
+      .call(axisBottom(x));
+    svg.select(".y.axis")
+      .transition(t)
+      .call(axisLeft(y));
 
     nodes
-      .attr("x", function(d) { return x(d.name); })
-      .attr("width", x.bandwidth())
-      .attr("y", function(d) { return y(d.value); })
-      .attr("height", function(d) { return height - y(d.value); })
+      .transition(t)
+      .attr("x", function(d) { return x(d.name); });
+    nodes
+      .transition(t)
+      .attr("width", x.bandwidth());
+    nodes
+      .transition(t)
+      .attr("y", function(d) { return y(d.value); });
+    nodes
+      .transition(t)
+      .attr("height", function(d) { return height - y(d.value); });
+
+    nodes
       .exit().remove();
 
-    svg.selectAll(".x-axis").call(d3.axisBottom(x));
-    svg.selectAll(".y-axis").call(d3.axisLeft(y));
   }
 
-  // add the x Axis
-  svg.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .attr("class", "x-axis");
 
-
-  // add the y Axis
-  svg.append("g")
-    .attr("class", "y-axis");
-
-
-  d3.select("#update-data").on("click", function() {
+  select("#update-data").on("click", function() {
     showData(generateData());
   });
 
