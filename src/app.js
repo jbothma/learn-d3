@@ -1,4 +1,4 @@
-import { select, selectall } from 'd3-selection';
+import { select } from 'd3-selection';
 import { transition } from 'd3-transition';
 import { scaleLinear, scaleBand } from 'd3-scale';
 import { axisBottom, axisLeft } from 'd3-axis';
@@ -44,17 +44,33 @@ function drawChart() {
       .attr("class", "tooltip")
       .style("opacity", 0);
 
-  function showData(data) {
-    const nodes = svg.selectAll(".bar");
-
-    // Scale the range of the data in the domains
+  function updateScales(data) {
     x.domain(data.map(function(d) { return d.name; }));
     y.domain([0, max(data, function(d) { return d.value; })]);
+  }
 
+  function updateAxes() {
+    svg.select(".x.axis")
+      .transition(t)
+      .call(axisBottom(x));
+    svg.select(".y.axis")
+      .transition(t)
+      .call(axisLeft(y));
+  }
+
+  function showData(data) {
     // append the rectangles for the bar chart
 
-    nodes.data(data, d => d.name)
-      .enter().append("rect")
+    const bars = svg.selectAll(".bar").data(data, d => d.name);
+
+    bars.exit().remove();
+
+    updateScales(data);
+    updateAxes();
+
+    const barsEntering = bars.enter();
+
+    barsEntering.append("rect")
       .attr("class", "bar")
       .on("mouseover", function(d) {
           div.style("opacity", .9);
@@ -62,32 +78,19 @@ function drawChart() {
           .style("left", (x(d.name)) + "px")
           .style("bottom", (y(d.value)) + "px");
       })
-      .on("mouseout", function(d) {
+      .on("mouseout", function() {
           div.style("opacity", 0);
       });
 
-    svg.select(".x.axis")
+    bars
       .transition(t)
-      .call(axisBottom(x));
-    svg.select(".y.axis")
-      .transition(t)
-      .call(axisLeft(y));
-
-    nodes
-      .transition(t)
-      .attr("x", function(d) { return x(d.name); });
-    nodes
-      .transition(t)
-      .attr("width", x.bandwidth());
-    nodes
-      .transition(t)
-      .attr("y", function(d) { return y(d.value); });
-    nodes
-      .transition(t)
+      .attr("x", function(d) { return x(d.name); })
+      .attr("width", x.bandwidth())
+      .attr("y", function(d) { return y(d.value); })
       .attr("height", function(d) { return height - y(d.value); });
 
-    nodes
-      .exit().remove();
+    updateScales(data);
+    updateAxes();
 
   }
 

@@ -8,10 +8,10 @@ export function generateData() {
 
     items.push({
       name: String.fromCharCode(65 + i),
-      value: Math.random() * 100,
+      value: Math.random() * 100 + 10,
       timestamp: now
     });
-  };
+  }
 
   return items;
 }
