@@ -1,3 +1,6 @@
+import 'core-js';
+import "regenerator-runtime/runtime";
+
 import { select } from 'd3-selection';
 import { transition } from 'd3-transition';
 import { scaleLinear, scaleBand } from 'd3-scale';
